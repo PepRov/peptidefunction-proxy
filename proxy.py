@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+tidfrom fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from gradio_client import Client
@@ -14,7 +14,7 @@ app.add_middleware(
 )
 
 # Connect to your Hugging Face Space
-client = Client("Ym420/Peptide-Function-Space")   # <-- change if your Space name differs
+client = Client("Ym420/peptide-function-classification")   # <-- change if your Space name differs
 
 
 class SequenceRequest(BaseModel):
