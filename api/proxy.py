@@ -13,7 +13,7 @@ app.add_middleware(
 )
 
 # Replace with your exact HF Space name
-client = Client("Ym420/Peptide-Function")  
+client = Client("Ym420/peptide-function-classification")  
 
 class SequenceRequest(BaseModel):
     sequence: str
