@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/proxy.py": {
-      "runtime": "@vercel/python@1.1.0",
+      "runtime": "python3.11",
       "maxDuration": 30
     }
   },
@@ -13,6 +13,7 @@
     }
   ]
 }
+
 
 
 
