@@ -2,7 +2,7 @@ import json
 from gradio_client import Client
 
 # --- HF Space client ---
-client = Client("Ym420/Peptide-Function")  # your working HF Space
+client = Client("Ym420/peptide-function-classification")  # your working HF Space
 
 def handler(request, context):
     path = request.path
