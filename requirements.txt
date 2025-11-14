@@ -1,6 +1,5 @@
-fastapi
-uvicorn
-pydantic
-gradio_client
-python-multipart
-mangum
+gradio_client==0.6.25
+joblib
+pandas
+numpy
+huggingface_hub
