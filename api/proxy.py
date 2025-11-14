@@ -1,18 +1,20 @@
-# --- proxy.py (Vercel Serverless Function) ---
-
 import json
 from gradio_client import Client
 
-# --- Connect to Hugging Face Space ---
-# Replace with your actual space path
-client = Client("Ym420/peptide-function-classification")
+# --- Connect to Hugging Face Space (public) ---
+try:
+    client = Client("Ym420/peptide-function-classification")
+    print("✅ Connected to HF Space successfully")
+except Exception as e:
+    print("❌ Failed to connect to HF Space:", e)
+    client = None
 
-# --- Handler function for Vercel ---
+# --- Vercel handler ---
 def handler(request, context):
-    seq = ""  # Initialize sequence for safety
+    seq = ""  # Initialize safely
 
     try:
-        # --- GET request: simple health check ---
+        # --- GET: health check ---
         if request.method == "GET":
             return {
                 "statusCode": 200,
@@ -23,21 +25,29 @@ def handler(request, context):
                 "body": json.dumps({"message": "Peptide proxy server running"})
             }
 
-        # --- POST request: call HF Space ---
+        # --- POST: predict peptide ---
         if request.method == "POST":
-            # Decode and parse JSON body
+            if client is None:
+                raise RuntimeError("HF Space client not initialized")
+
             data = json.loads(request.body.decode("utf-8"))
             seq = data.get("sequence", "")
 
+            if not seq:
+                return {
+                    "statusCode": 400,
+                    "headers": {
+                        "Content-Type": "application/json",
+                        "Access-Control-Allow-Origin": "*"
+                    },
+                    "body": json.dumps({"error": "Missing 'sequence' in request"})
+                }
+
             print("✅ Received sequence:", repr(seq))
 
-            # Call Hugging Face Space
-            result = client.predict(
-                sequence=seq,
-                api_name="/predict_peptide"
-            )
+            result = client.predict(sequence=seq, api_name="/predict_peptide")
+            print("✅ HF Space result:", result)
 
-            # Parse results into standardized format
             parsed = []
             for row in result:
                 if isinstance(row, (list, tuple)) and len(row) == 2:
@@ -58,7 +68,7 @@ def handler(request, context):
                 })
             }
 
-        # --- Unsupported HTTP method ---
+        # --- Unsupported method ---
         return {
             "statusCode": 405,
             "headers": {
@@ -69,6 +79,7 @@ def handler(request, context):
         }
 
     except Exception as e:
+        print("❌ ERROR:", e)
         return {
             "statusCode": 500,
             "headers": {
@@ -81,5 +92,3 @@ def handler(request, context):
                 "error": str(e)
             })
         }
-
-
