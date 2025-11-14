@@ -1,5 +1,8 @@
 import json
 from gradio_client import Client
+from fastapi import FastAPI
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 # --- HF Space client ---
 client = Client("Ym420/peptide-function-classification")  # your working HF Space
