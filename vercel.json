@@ -1,15 +1,25 @@
 {
   "version": 2,
-  "functions": {
-    "api/proxy.py": {
-      "runtime": "now-php@1.0.0",
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "proxy.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
   "routes": [
-    { "src": "/(.*)", "dest": "api/proxy.py" }
+    {
+      "src": "/",
+      "methods": ["GET"],
+      "dest": "proxy.py"
+    },
+    {
+      "src": "/predict",
+      "methods": ["POST"],
+      "dest": "proxy.py"
+    }
   ]
 }
+
 
 
 
