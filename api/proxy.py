@@ -12,7 +12,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = Client("Ym420/Peptide-Function")  # or add hf_token if private
+client = Client("Ym420/peptide-function-classification")  # or add hf_token if private
 
 class SequenceRequest(BaseModel):
     sequence: str
