@@ -1,19 +1,13 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "api/proxy.py",
-      "use": "@vercel/python",
-      "config": { "runtime": "python3.11" }
-    }
+    { "src": "proxy.py", "use": "@vercel/python" }
   ],
   "routes": [
-    {
-      "src": "/api/proxy",
-      "dest": "api/proxy.py"
-    }
+    { "src": "/(.*)", "dest": "proxy.py" }
   ]
 }
+
 
 
 
