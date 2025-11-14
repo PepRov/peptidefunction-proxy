@@ -1,41 +1,42 @@
 import json
 from gradio_client import Client
 
-client = Client("Ym420/peptide-function-classification")  # HF Space
+# --- HF Space client ---
+client = Client("Ym420/Peptide-Function")  # your working HF Space
 
 def handler(request, context):
-    if request.method == "GET":
+    path = request.path
+    method = request.method
+
+    # --- GET "/" ---
+    if path == "/" and method == "GET":
         return {
             "statusCode": 200,
             "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"message": "Proxy server running"})
         }
 
-    if request.method == "POST":
+    # --- POST "/predict" ---
+    if path == "/predict" and method == "POST":
         try:
             data = json.loads(request.body)
             seq = data.get("sequence", "")
             print("✅ Received sequence:", repr(seq))
 
-            # Call HF Space
-            result = client.predict(sequence=seq, api_name="/predict_promoter")
+            # Call your Gradio HF Space API endpoint
+            result = client.predict(sequence=seq, api_name="/predict_peptide")
             print("✅ Raw result from HF:", result)
 
-            if isinstance(result, (list, tuple)) and len(result) >= 2:
-                label = str(result[0])
-                confidence = float(result[1])
-            else:
-                label = "error"
-                confidence = 0.0
+            # Parse result as in your working code
+            parsed = []
+            for row in result:
+                if isinstance(row, (list, tuple)) and len(row) == 2:
+                    parsed.append({"target": str(row[0]), "probability": float(row[1])})
 
             return {
                 "statusCode": 200,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
-                    "sequence": seq,
-                    "prediction": label,
-                    "confidence": confidence
-                })
+                "body": json.dumps({"sequence": seq, "predictions": parsed})
             }
 
         except Exception as e:
@@ -43,18 +44,12 @@ def handler(request, context):
             return {
                 "statusCode": 500,
                 "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
-                    "sequence": seq,
-                    "prediction": "error",
-                    "confidence": 0.0,
-                    "error": str(e)
-                })
+                "body": json.dumps({"sequence": seq, "predictions": [], "error": str(e)})
             }
 
+    # --- Route not found ---
     return {
-        "statusCode": 405,
+        "statusCode": 404,
         "headers": {"Content-Type": "application/json"},
-        "body": json.dumps({"error": f"Method {request.method} not allowed"})
+        "body": json.dumps({"error": f"Route {path} with method {method} not found"})
     }
-
-
