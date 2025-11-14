@@ -1,53 +1,63 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
+# --- proxy.py (Option 1 for Vercel Serverless Function) ---
+
+import json
 from gradio_client import Client
 
-app = FastAPI()
+# --- Connect to Hugging Face Space ---
+client = Client("Ym420/peptide-function-classification")  # MODIFIED: kept from your original
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# --- Handler function for Vercel ---
+# MODIFIED: Replaced FastAPI app with single handler(request, context)
+def handler(request, context):
+    # --- GET request ---
+    if request.method == "GET":
+        return {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "Peptide proxy server running"})  # MODIFIED: replaces FastAPI root()
+        }
 
-# Replace with your exact HF Space name
-client = Client("Ym420/peptide-function-classification")  
+    # --- POST request ---
+    if request.method == "POST":
+        try:
+            # MODIFIED: replaced FastAPI BaseModel with manual JSON parsing
+            data = json.loads(request.body)
+            seq = data.get("sequence", "")
 
-class SequenceRequest(BaseModel):
-    sequence: str
+            print("✅ Received sequence:", repr(seq))  # MODIFIED: kept debug print
 
-@app.get("/")
-def root():
-    return {"message": "Peptide proxy server running"}
+            # Call HF Space API
+            result = client.predict(
+                sequence=seq,
+                api_name="/predict_peptide"
+            )
 
-@app.post("/predict")
-def predict(req: SequenceRequest):
-    try:
-        print("Received sequence:", repr(req.sequence))
+            # Parse results
+            parsed = []
+            for row in result:
+                if isinstance(row, (list, tuple)) and len(row) == 2:
+                    parsed.append({
+                        "target": str(row[0]),
+                        "probability": float(row[1])
+                    })
 
-        result = client.predict(
-            sequence=req.sequence,
-            api_name="/predict_peptide"
-        )
-
-        parsed = []
-        for row in result:
-            if isinstance(row, (list, tuple)) and len(row) == 2:
-                parsed.append({
-                    "target": str(row[0]),
-                    "probability": float(row[1])
+            return {
+                "statusCode": 200,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({
+                    "sequence": seq,
+                    "predictions": parsed
                 })
+            }
 
-        return {
-            "sequence": req.sequence,
-            "predictions": parsed
-        }
+        except Exception as e:
+            return {
+                "statusCode": 500,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({
+                    "sequence": seq,
+                    "predictions": [],
+                    "error": str(e)
+                })
+            }
 
-    except Exception as e:
-        return {
-            "sequence": req.sequence,
-            "predictions": [],
-            "error": str(e)
-        }
