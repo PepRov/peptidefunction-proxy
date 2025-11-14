@@ -1,36 +1,31 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
+import json
 from gradio_client import Client
 
-app = FastAPI()
+# connect to your HF Space (public)
+client = Client("Ym420/Peptide-Function")  
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-client = Client("Ym420/peptide-function-classification")  # or add hf_token if private
-
-class SequenceRequest(BaseModel):
-    sequence: str
-
-@app.get("/")
-def root():
-    return {"message": "Peptide proxy server running"}
-
-@app.post("/predict")
-def predict(req: SequenceRequest):
+def handler(request, context):
     try:
-        result = client.predict(sequence=req.sequence, api_name="/predict_peptide")
-        parsed = [{"target": row[0], "probability": float(row[1])} for row in result]
-        return {"sequence": req.sequence, "predictions": parsed}
+        if request.method == "GET":
+            return {"message": "Peptide proxy server running"}
+
+        if request.method == "POST":
+            body = request.body
+            data = json.loads(body)
+            seq = data.get("sequence", "")
+
+            result = client.predict(sequence=seq, api_name="/predict_peptide")
+            parsed = [{"target": row[0], "probability": float(row[1])} for row in result]
+
+            return {
+                "statusCode": 200,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({"sequence": seq, "predictions": parsed})
+            }
+
     except Exception as e:
-        return {"sequence": req.sequence, "predictions": [], "error": str(e)}
-
-
-# Vercel expects a callable named `handler`
-from mangum import Mangum  # lightweight AWS Lambda/ASGI adapter
-handler = Mangum(app)
+        return {
+            "statusCode": 500,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"error": str(e)})
+        }
