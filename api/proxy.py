@@ -13,3 +13,4 @@ def handler(request, context):
         "body": json.dumps({"error": f"Method {request.method} not allowed"})
     }
 
+
