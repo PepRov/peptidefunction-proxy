@@ -66,7 +66,7 @@ def predict(req: SequenceRequest):
         #     gr.api(predict_peptide, api_name="predict_peptide")
         result = client.predict(
             sequence=req.sequence,
-            api_name="predict_peptide"  # No leading slash needed
+            api_name="/predict_peptide"  # No leading slash needed
         )
         
         
