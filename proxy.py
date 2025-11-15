@@ -68,12 +68,7 @@ def predict(req: SequenceRequest):
             sequence=req.sequence,
             api_name="predict_peptide"  # No leading slash needed
         )
-        return result
         
-    except Exception as e:
-        return {"error": str(e), "predictions": []}
-        
-
         # -----------------------------
         # 6c. Debug: print raw HF result
         # -----------------------------
