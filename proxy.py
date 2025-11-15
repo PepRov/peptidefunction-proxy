@@ -19,7 +19,7 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
 )
-return result
+
 # -----------------------------
 # 3. Initialize HF Space client
 # -----------------------------
@@ -68,6 +68,11 @@ def predict(req: SequenceRequest):
             sequence=req.sequence,
             api_name="predict_peptide"  # No leading slash needed
         )
+        return result
+        
+    except Exception as e:
+        return {"error": str(e), "predictions": []}
+        
 
         # -----------------------------
         # 6c. Debug: print raw HF result
