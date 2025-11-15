@@ -27,7 +27,7 @@ def handler(request, context):
             print("✅ Received sequence:", repr(seq))
 
             # Call your Gradio HF Space API endpoint
-            result = client.predict(sequence=seq, api_name="/predict_peptide")
+            result = client.predict(sequence=seq, api_name="predict_peptide")
             print("✅ Raw result from HF:", result)
 
             # Parse result as in your working code
