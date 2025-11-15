@@ -19,7 +19,7 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
 )
-
+return result
 # -----------------------------
 # 3. Initialize HF Space client
 # -----------------------------
