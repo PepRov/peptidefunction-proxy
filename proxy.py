@@ -90,6 +90,14 @@ def predict(req: SequenceRequest):
                         "probability": float(row[1])
                     })
 
+        elif isinstance(result, list):
+            # result from list return: [["Gram+", 0.12], ...]
+            for row in result:
+                predictions.append({
+                    "target": row[0],
+                    "probability": float(row[1])
+                })
+
         # -----------------------------
         # 6e. Return JSON response
         # -----------------------------
