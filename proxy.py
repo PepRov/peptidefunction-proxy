@@ -47,7 +47,7 @@ def root():
 # -----------------------------
 # 6. Prediction endpoint
 # -----------------------------
-@app.post("/predict")
+@app.post("predict")
 def predict(req: SequenceRequest):
     """
     Receives a peptide sequence from the client, forwards it to the
@@ -66,7 +66,7 @@ def predict(req: SequenceRequest):
         #     gr.api(predict_peptide, api_name="predict_peptide")
         result = client.predict(
             sequence=req.sequence,
-            api_name="/predict_peptide"  # No leading slash needed
+            api_name="predict_peptide"  # No leading slash needed
         )
         
         
