@@ -1,99 +1,111 @@
-import json
-from gradio_client import Client
+# Import FastAPI framework and supporting tools
+from fastapi import FastAPI             # For creating the API app
+from pydantic import BaseModel         # For parsing & validating request bodies
+from fastapi.middleware.cors import CORSMiddleware  # To enable cross-origin requests
+from gradio_client import Client       # To call Hugging Face Gradio API
 
-# ------------------------------------------------------------
-# Create Gradio client ONCE at cold-start.
-# This avoids reinitialising the HF Space client per request.
-# ------------------------------------------------------------
-client = Client("Ym420/peptide-function-classification")
+# -----------------------------
+# 1. Create FastAPI app
+# -----------------------------
+app = FastAPI(title="Peptide Function Proxy API")
 
+# -----------------------------
+# 2. Enable CORS
+# -----------------------------
+# This allows requests from any origin (important for iOS apps or web frontends)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
-def handler(request, context):
+# -----------------------------
+# 3. Initialize HF Space client
+# -----------------------------
+# Creating the client once at cold start avoids re-initializing per request
+client = Client("Ym420/peptide-function-classification")  # Replace with your HF Space
+
+# -----------------------------
+# 4. Define request model
+# -----------------------------
+# FastAPI automatically parses JSON into this Pydantic model
+class SequenceRequest(BaseModel):
+    sequence: str   # The peptide sequence sent by the client
+
+# -----------------------------
+# 5. Health check endpoint
+# -----------------------------
+@app.get("/")
+def root():
     """
-    Main serverless entry point for Vercel.
-    Handles:
-    - GET "/"       → health check
-    - POST "/predict" → forwards to HF Space
+    Simple endpoint to verify the proxy server is running.
+    Returns a small JSON message.
     """
+    return {"message": "Proxy server running"}
 
-    path = request.path        # e.g. "/", "/predict"
-    method = request.method    # "GET" or "POST"
+# -----------------------------
+# 6. Prediction endpoint
+# -----------------------------
+@app.post("/predict")
+def predict(req: SequenceRequest):
+    """
+    Receives a peptide sequence from the client, forwards it to the
+    Hugging Face Space API, and returns the predictions in JSON.
+    """
+    try:
+        # -----------------------------
+        # 6a. Debug: print received sequence
+        # -----------------------------
+        print("✅ Received sequence:", repr(req.sequence))
 
-    # ------------------------------------------------------------
-    # 1. GET "/" — health check endpoint
-    # ------------------------------------------------------------
-    if path == "/" and method == "GET":
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"message": "Proxy server running OK"})
-        }
+        # -----------------------------
+        # 6b. Call HF Space API
+        # -----------------------------
+        # This calls your Gradio API endpoint defined in app.py:
+        #     gr.api(predict_peptide, api_name="predict_peptide")
+        result = client.predict(
+            sequence=req.sequence,
+            api_name="predict_peptide"  # No leading slash needed
+        )
 
-    # ------------------------------------------------------------
-    # 2. POST "/predict" — forwards sequence → HF Space → returns predictions
-    # ------------------------------------------------------------
-    if path == "/predict" and method == "POST":
-        try:
-            # Parse JSON request from iOS or browser
-            body = json.loads(request.body)
-            sequence = body.get("sequence", "")
+        # -----------------------------
+        # 6c. Debug: print raw HF result
+        # -----------------------------
+        print("✅ Raw result from HF:", result)
 
-            print("📥 Received sequence:", sequence)
-
-            # --------------------------------------------------------
-            # Call your HF Space API endpoint:
-            # app.py contains:
-            #     gr.api(predict_peptide, api_name="predict_peptide")
-            # So we call `api_name="predict_peptide"`
-            # --------------------------------------------------------
-            hf_result = client.predict(
-                sequence=sequence,
-                api_name="predict_peptide"   # ← FIXED (no leading slash)
-            )
-
-            print("📤 HF raw result:", hf_result)
-
-            # --------------------------------------------------------
-            # Convert HF output (table rows) to JSON for iOS
-            # Expected format: [["label1", prob1], ["label2", prob2], ...]
-            # --------------------------------------------------------
-            predictions = []
-            for row in hf_result:
+        # -----------------------------
+        # 6d. Process HF Space output
+        # -----------------------------
+        # Expected format: 5 rows x 2 columns
+        # Example: [["Gram+", 0.87], ["Fungus", 0.34], ...]
+        predictions = []
+        if isinstance(result, list):
+            for row in result:
                 if isinstance(row, (list, tuple)) and len(row) == 2:
+                    # Convert each row to dictionary for JSON
                     predictions.append({
                         "target": str(row[0]),
                         "probability": float(row[1])
                     })
 
-            # Success
-            return {
-                "statusCode": 200,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
-                    "sequence": sequence,
-                    "predictions": predictions
-                })
-            }
+        # -----------------------------
+        # 6e. Return JSON response
+        # -----------------------------
+        # FastAPI automatically converts this dict to JSON
+        return {
+            "sequence": req.sequence,
+            "predictions": predictions
+        }
 
-        except Exception as e:
-            print("❌ Error in /predict:", str(e))
-            return {
-                "statusCode": 500,
-                "headers": {"Content-Type": "application/json"},
-                "body": json.dumps({
-                    "sequence": sequence,
-                    "predictions": [],
-                    "error": str(e)
-                })
-            }
-
-    # ------------------------------------------------------------
-    # 3. Any other route → 404 Not Found
-    # ------------------------------------------------------------
-    return {
-        "statusCode": 404,
-        "headers": {"Content-Type": "application/json"},
-        "body": json.dumps({
-            "error": f"Route '{path}' with method '{method}' not found."
-        })
-    }
+    except Exception as e:
+        # -----------------------------
+        # 6f. Error handling
+        # -----------------------------
+        # Catch any exceptions and return a JSON error
+        print("❌ Error in /predict:", str(e))
+        return {
+            "sequence": req.sequence,
+            "predictions": [],
+            "error": str(e)
+        }
