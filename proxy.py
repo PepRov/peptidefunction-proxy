@@ -47,7 +47,7 @@ def root():
 # -----------------------------
 # 6. Prediction endpoint
 # -----------------------------
-@app.post("predict")
+@app.post("/predict")
 def predict(req: SequenceRequest):
     """
     Receives a peptide sequence from the client, forwards it to the
