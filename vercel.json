@@ -1,23 +1,24 @@
 {
-  "runtime": "python3.11",
-  "functions": {
-    "proxy.py": {
-      "runtime": "python3.11",
-      "memory": 1024,
-      "maxDuration": 30
-    }
-  },
-  "routes": [
-    {
-      "src": "/predict",
-      "dest": "/proxy.py"
-    },
-    {
-      "src": "/",
-      "dest": "/proxy.py"
-    }
-  ]
+    "version": 2,
+    "builds": [
+        {
+            "src": "proxy.py",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/", "methods": ["GET"], 
+            "dest": "proxy.py"
+        },
+        {
+            "src": "/predict", "methods": ["POST"], 
+            "dest": "proxy.py"
+        }
+        
+    ]
 }
+
 
 
 
