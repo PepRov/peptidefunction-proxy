@@ -2,3 +2,4 @@ fastapi
 pydantic
 uvicorn
 gradio_client>=1.10.0
+requests
