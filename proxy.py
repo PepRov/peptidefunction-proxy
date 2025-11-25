@@ -1,5 +1,5 @@
 # Import FastAPI framework and supporting tools
-from fastapi import FastAPI
+from fastapi import FastAPI, Request  # ✅ Added Request import to detect client source
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from gradio_client import Client
@@ -35,7 +35,7 @@ def root():
 
 # 6. Prediction endpoint
 @app.post("/predict")
-def predict(req: SequenceRequest):
+async def predict(req: SequenceRequest, request: Request):  # ✅ Added request parameter to detect client type
     try:
         print("✅ Received sequence:", repr(req.sequence))
 
@@ -69,14 +69,21 @@ def predict(req: SequenceRequest):
         # --- Log to Google Sheet ---
         # ===========================
         try:
+            # ✅ Determine source dynamically: iOS vs Web
+            client_user_agent = request.headers.get("user-agent", "").lower()
+            if "mozilla" in client_user_agent or "chrome" in client_user_agent:
+                source = "web"
+            else:
+                source = "iOS app"
+
             sheet_response = requests.post(
                 url=SHEET_URL,
                 headers={"Content-Type": "application/json"},
                 json={
                     "sequence": req.sequence,
                     "user": req.user or "anonymous",
-                    "source": "iOS app",
-                    "token": SECRET_TOKEN,  # ✅ Token included
+                    "source": source,          # ✅ Dynamic source for web/iOS
+                    "token": SECRET_TOKEN,     # ✅ Token included
                 },
                 timeout=5
             )
