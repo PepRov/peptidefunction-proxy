@@ -74,7 +74,7 @@ def predict(req: SequenceRequest):
                 headers={"Content-Type": "application/json"},
                 json={
                     "sequence": req.sequence,
-                    "user": req.user or "anonymous",
+                    "user": getattr(req.user or "anonymous"),
                     "source": "iOS app",
                     "token": SECRET_TOKEN,  # ✅ Token included
                 },
