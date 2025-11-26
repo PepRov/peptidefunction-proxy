@@ -1,22 +1,22 @@
 {
-    "version": 2,
-    "builds": [
-        {
-            "src": "proxy.py",
-            "use": "@vercel/python"
-        }
-    ],
-    "routes": [
-        {
-            "src": "/", "methods": ["GET"], 
-            "dest": "proxy.py"
-        },
-        {
-            "src": "/predict", "methods": ["POST"], 
-            "dest": "proxy.py"
-        }
-        
-    ]
+  "version": 2,
+  "functions": {
+    "proxy.js": {
+      "runtime": "edge"
+    }
+  },
+  "routes": [
+    {
+      "src": "/", 
+      "methods": ["GET"],
+      "dest": "/proxy.js"
+    },
+    {
+      "src": "/predict",
+      "methods": ["POST"],
+      "dest": "/proxy.js"
+    }
+  ]
 }
 
 
