@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from gradio_client import Client
 import requests
 
+
+
 # 1. Create FastAPI app
 app = FastAPI(title="Peptide Function Proxy API")
 
@@ -19,14 +21,9 @@ app.add_middleware(
 # 3. Initialize HF Space client
 client = Client("Ym420/peptide-function-classification")
 
-# --- Google Sheets logging constants ---
-SHEET_URL = "https://script.google.com/macros/s/AKfycbzRhAfsU1DFAiYM24bHWTNzfg2ZKbPNI31TfGfRDkB7u789aJgjvSYNlX9hYZaXDNHm/exec"  # Paste your Web App URL here
-SECRET_TOKEN = "F8k9G2pQ1rXs7ZtL4bMv6YwA"  # Same token as in Apps Script
-
 # 4. Request model
 class SequenceRequest(BaseModel):
     sequence: str
-    user: str = "anonymous"  # optional, default to anonymous
 
 # 5. Health check endpoint
 @app.get("/")
@@ -44,6 +41,7 @@ def predict(req: SequenceRequest):
             sequence=req.sequence,
             api_name="/predict_peptide"   # MUST use slash for your HF Space
         )
+
         print("HF raw result:", result)
 
         # --- Convert HF result to JSON list ---
@@ -64,27 +62,6 @@ def predict(req: SequenceRequest):
                     "target": row[0],
                     "probability": float(row[1])
                 })
-
-        # ===========================
-        # --- Log to Google Sheet ---
-        # ===========================
-        try:
-            sheet_response = requests.post(
-                url=SHEET_URL,
-                headers={"Content-Type": "application/json"},
-                json={
-                    "sequence": req.sequence,
-                    "user": req.user or "anonymous",
-                    "source": "iOS app",
-                    "token": SECRET_TOKEN,  # ✅ Token included
-                },
-                timeout=5
-            )
-            sheet_result = sheet_response.text
-            print("📌 Google Sheet response:", sheet_result)
-        except Exception as sheet_error:
-            print("⚠️ Failed to log to Google Sheet:", sheet_error)
-        # ==========================================================
 
         return {
             "sequence": req.sequence,
