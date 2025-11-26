@@ -21,8 +21,8 @@ export default async function handler(req) {
     console.log("Received sequence:", sequence);
 
     // --- HF SPACE URL (equivalent to your gradio_client call) ---
-    const HF_URL =
-      "https://Ym420-peptide-function-classification.hf.space/predict_peptide";
+    const HF_URL = "https://ym420-peptide-function-classification.hf.space/run/predict_peptide";
+
 
     // --- Call HF Space ---
     const hfRes = await fetch(HF_URL, {
