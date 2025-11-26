@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from gradio_client import Client
 import requests
-
+import time    # ⬅️ NEW: For timing retries
 
 
 # 1. Create FastAPI app
@@ -36,13 +36,36 @@ def predict(req: SequenceRequest):
     try:
         print("✅ Received sequence:", repr(req.sequence))
 
-        # --- Call HF Space ---
-        result = client.predict(
-            sequence=req.sequence,
-            api_name="/predict_peptide"   # MUST use slash for your HF Space
-        )
+        # ----------------------------------------------------
+        # NEW: Retry logic to prevent Vercel random timeouts
+        # ----------------------------------------------------
+        max_attempts = 3             # ⬅️ NEW: retry 3 times
+        last_exception = None        # ⬅️ NEW: store error
 
-        print("HF raw result:", result)
+        for attempt in range(1, max_attempts + 1):         # ⬅️ NEW
+            try:
+                print(f"🔄 HF request attempt {attempt}/{max_attempts}")   # ⬅️ NEW
+
+                # --- Call HF Space ---
+                # NEW: Increased timeout for slow HF Space
+                result = client.predict(
+                    sequence=req.sequence,
+                    api_name="/predict_peptide",
+                    timeout=30   # ⬅️ NEW: Force 30s timeout inside HF call
+                )
+
+                print("HF raw result:", result)
+                break   # ⬅️ NEW: success → break retry loop
+
+            except Exception as e:
+                print(f"⚠️ HF attempt {attempt} failed:", e)   # ⬅️ NEW
+                last_exception = e                             # ⬅️ NEW
+                time.sleep(1.2)                                # ⬅️ NEW: small delay between retries
+
+        # After retries, still failed → return error
+        if last_exception and attempt == max_attempts:        # ⬅️ NEW
+            raise last_exception                              # ⬅️ NEW
+
 
         # --- Convert HF result to JSON list ---
         predictions = []
