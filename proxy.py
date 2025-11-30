@@ -21,8 +21,6 @@ app.add_middleware(
 client = Client("Ym420/peptide-function-classification")
 
 # --- Google Sheets logging constants ---
-#SHEET_URL = ""  # Paste your Web App URL here
-#SECRET_TOKEN = ""  # Same token as in Apps Script
 SHEET_URL = os.getenv("SHEET_URL")
 SECRET_TOKEN = os.getenv("SECRET_TOKEN")
 
