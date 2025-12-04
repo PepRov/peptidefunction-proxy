@@ -1,5 +1,5 @@
 fastapi==0.101.0
-pydantic==1.10.12
+pydantic==1.10.13
 uvicorn==0.22.0
 gradio_client==1.11.1
 requests==2.31.0
