@@ -18,7 +18,7 @@ app.add_middleware(
 )
 
 # 3. Initialize HF Space client
-#AMP_SPACE = "Ym420/peptide-function-classification"
+# Store space name in Vercel client_ID and variable in env variables and HF variables and secrets
 AMP_SPACE = os.getenv("AMP_SPACE")
 client = Client(AMP_SPACE)
 
