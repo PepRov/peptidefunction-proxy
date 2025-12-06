@@ -18,7 +18,8 @@ app.add_middleware(
 )
 
 # 3. Initialize HF Space client
-client = Client("Ym420/peptide-function-classification")
+AMP_SAPCE = "Ym420/peptide-function-classification"
+client = Client(AMP_SAPCE)
 
 # --- Google Sheets logging constants ---
 SHEET_URL = os.getenv("SHEET_URL")
